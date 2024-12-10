@@ -1,8 +1,10 @@
+import numpy as np
 import torch
 import random
 from torch import nn
 import torch.optim as optim
-
+from torch.distributions import Categorical
+from torch.utils.hipify.hipify_python import value
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
@@ -61,6 +63,26 @@ class Memory:
         self.rewards.append(reward)
         self.dones.append(done)
 
+    def sample(self, batch_size):
+        """Randomly sample a batch of data from the memory."""
+        if len(self.states) < batch_size:
+            batch_size = len(self.states)
+
+        indices = random.sample(range(len(self.states)), batch_size)
+        sampled_states = [self.states[i] for i in indices]
+        sampled_actions = [self.actions[i] for i in indices]
+        sampled_action_probs = [self.action_probs[i] for i in indices]
+        sampled_rewards = [self.rewards[i] for i in indices]
+        sampled_dones = [self.dones[i] for i in indices]
+
+        return (
+            torch.stack(sampled_states).to(device),
+            torch.tensor(sampled_actions).to(device),
+            torch.tensor(sampled_action_probs).to(device),
+            torch.tensor(sampled_rewards).to(device),
+            torch.tensor(sampled_dones).to(device)
+        )
+
     def clear(self):
         self.states = []
         self.actions = []
@@ -70,12 +92,15 @@ class Memory:
 
 
 class PPOAgent:
-    def __init__(self, state_dim, action_dim, actor_lr=3e-4, critic_lr=3e-4, gamma=0.99, epsilon=0.2, update_steps=10):
+    def __init__(self, state_dim, action_dim, actor_lr=0.01, critic_lr=0.01, gamma=0.99, lamb=0.95, epsilon=0.2, update_steps=4):
         self.actor = Actor(state_dim, action_dim).to(device)
+        self.old_actor = Actor(state_dim, action_dim).to(device)
         self.critic = Critic(state_dim).to(device)
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=actor_lr)
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=critic_lr)
+
         self.gamma = gamma
+        self.lamb = lamb
         self.epsilon = epsilon
         self.update_steps = update_steps
 
@@ -143,3 +168,50 @@ class PPOAgent:
             self.critic_optimizer.step()
 
         memory.clear()
+
+    def update_new(self, memory):
+        self.old_actor.load_state_dict(self.actor.state_dict())
+
+        for step in range(self.update_steps):
+            state, action, old_prob, reward, done = memory.sample(64)
+            # print(len(state), state[0].shape)  # (batch_size, action_dim)
+            value = self.critic(state).squeeze()
+            T = len(state)
+
+            # advantages
+            advantages = np.zeros(T, dtype=np.float32)
+            for t in range(T):
+                discount = 1
+                a_t = 0
+                for k in range(t, T - 1):
+                    a_t += (reward[k] + self.gamma * value[k + 1] * (1 - done[k]) - value[k]) * discount
+                    discount *= self.gamma * self.lamb
+                advantages[t] = a_t
+            with torch.no_grad():
+                advantages_tensor = torch.tensor(advantages, dtype=torch.float32).to(device)
+
+            # actor loss
+            action_prob = self.actor(state)
+            new_prob = action_prob.gather(1, action.unsqueeze(1).long()).squeeze()
+            ratio = torch.exp(new_prob - old_prob)
+            surr1 = ratio * advantages_tensor
+            surr2 = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon) * advantages_tensor
+            actor_loss = -torch.min(surr1, surr2).mean()
+
+            # critic loss
+            ret = []
+            G = 0
+            for reward, done in zip(reversed(reward), reversed(done)):
+                G = reward + self.gamma * G * (1 - done)
+                ret.insert(0, G)
+            ret = torch.tensor(ret, dtype=torch.float32).to(device)
+            critic_loss = nn.MSELoss()(value, ret)
+
+            # Backpropagation
+            self.actor_optimizer.zero_grad()
+            actor_loss.backward()
+            self.actor_optimizer.step()
+
+            self.critic_optimizer.zero_grad()
+            critic_loss.backward()
+            self.critic_optimizer.step()

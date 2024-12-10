@@ -8,7 +8,7 @@ from PPOAgent import *
 NUM_EPISODES = 3000
 NUM_STEPS = 500
 NUM_ENVS = 32
-UPDATE_INTERVAL = 50
+UPDATE_INTERVAL = 100
 
 # # save path
 # current_path = os.path.dirname(os.path.realpath(__file__))
@@ -17,7 +17,7 @@ UPDATE_INTERVAL = 50
 
 
 def ppo_train(
-    num_envs=1, num_agents=3, num_episodes=1000, num_steps=128
+    num_envs=1, num_agents=3, num_episodes=1000, num_steps=500
 ):
     """
     在 vmas 的 transport 场景中训练 PPO。
@@ -99,11 +99,11 @@ def ppo_train(
                 break
 
         # 更新每个智能体的策略
-        #     if (step + 1) % UPDATE_INTERVAL == 0:
-        #         for agent_id, agent in enumerate(agents):
-        #             agent.update(memories[agent_id])
-        for agent_id, agent in enumerate(agents):
-            agent.update(memories[agent_id])
+            if (step + 1) % UPDATE_INTERVAL == 0:
+                for agent_id, agent in enumerate(agents):
+                    agent.update(memories[agent_id])
+        # for agent_id, agent in enumerate(agents):
+        #     agent.update_new(memories[agent_id])
 
         # 打印每个环境的总奖励
         print(f"Episode {episode + 1}, Rewards: {episode_rewards.mean(axis=0)}")
