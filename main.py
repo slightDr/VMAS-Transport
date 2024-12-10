@@ -101,7 +101,7 @@ def ppo_train(
         # 更新每个智能体的策略
             if (step + 1) % UPDATE_INTERVAL == 0:
                 for agent_id, agent in enumerate(agents):
-                    agent.update_new_new(memories[agent_id])
+                    agent.update_new(memories[agent_id])
         # for agent_id, agent in enumerate(agents):
         #     agent.update_new_new(memories[agent_id])
 
@@ -109,37 +109,7 @@ def ppo_train(
         print(f"Episode {episode + 1}, Rewards: {sum(episode_rewards.mean(axis=0)) / num_steps}")
 
 
-# def cppo_train(env, state_dim, action_dim, batch_size, num_episode, num_step):
-#     agent = PPOAgent(state_dim, action_dim, batch_size)  # TODO
-#     best_reward = 0
-#     for episode_i in range(num_episode):
-#         states = env.reset()
-#         done = False
-#         episode_reward = 0
-#
-#         for step_i in range(num_step):
-#             actions, values = agent.get_action(states)  # TODO
-#             states, rewards, infos, dones = env.step(actions)
-#
-#             agent.buffer.add(states, actions, rewards, values, dones)  # TODO
-#
-#             if (step_i + 1) % UPDATE_INTERVAL == 0:
-#                 agent.update()  # TODO
-#
-#         if episode_reward > best_reward:
-#             best_reward = episode_reward
-#             agent.save_policy()  # TODO
-#             torch.save(agent.actor.state_dict(), save_path + f"cppo_actor_{timestamp}.pth")
-#
-#         print(f"Episode {episode_i + 1}: Reward {round(episode_reward, 4)}")
-
-
 def main():
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # env = vmas.make_env("transport", num_envs=NUM_ENVS, device=device, continuous_actions=False, seed=42)
-    #
-    # STATE_DIM = env.observation_space[0].shape[0]
-    # ACTION_DIM = env.action_space[0].shape[0]
 
     ppo_train()
 
