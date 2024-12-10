@@ -4,7 +4,6 @@ import random
 from torch import nn
 import torch.optim as optim
 from torch.distributions import Categorical
-from torch.utils.hipify.hipify_python import value
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
@@ -55,13 +54,15 @@ class Memory:
         self.action_probs = []
         self.rewards = []
         self.dones = []
+        self.next_states = []
 
-    def store(self, state, action, action_prob, reward, done):
+    def store(self, state, action, action_prob, reward, done, next_state):
         self.states.append(state)
         self.actions.append(action)
         self.action_probs.append(action_prob)
         self.rewards.append(reward)
         self.dones.append(done)
+        self.next_states.append(next_state)
 
     def sample(self, batch_size):
         """Randomly sample a batch of data from the memory."""
@@ -74,13 +75,15 @@ class Memory:
         sampled_action_probs = [self.action_probs[i] for i in indices]
         sampled_rewards = [self.rewards[i] for i in indices]
         sampled_dones = [self.dones[i] for i in indices]
+        sampled_next_states = [self.next_states[i] for i in indices]
 
         return (
             torch.stack(sampled_states).to(device),
             torch.tensor(sampled_actions).to(device),
             torch.tensor(sampled_action_probs).to(device),
             torch.tensor(sampled_rewards).to(device),
-            torch.tensor(sampled_dones).to(device)
+            torch.tensor(sampled_dones).to(device),
+            torch.stack(sampled_next_states).to(device),
         )
 
     def clear(self):
@@ -89,12 +92,13 @@ class Memory:
         self.action_probs = []
         self.rewards = []
         self.dones = []
+        self.next_states = []
 
 
 class PPOAgent:
-    def __init__(self, state_dim, action_dim, actor_lr=0.01, critic_lr=0.01, gamma=0.99, lamb=0.95, epsilon=0.2, update_steps=4):
+    def __init__(self, state_dim, action_dim, actor_lr=3e-4, critic_lr=3e-4, gamma=0.99, lamb=0.95, epsilon=0.2, update_steps=4):
         self.actor = Actor(state_dim, action_dim).to(device)
-        self.old_actor = Actor(state_dim, action_dim).to(device)
+        # self.old_actor = Actor(state_dim, action_dim).to(device)
         self.critic = Critic(state_dim).to(device)
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=actor_lr)
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=critic_lr)
@@ -110,8 +114,9 @@ class PPOAgent:
     def select_action(self, state):
         with torch.no_grad():
             action_probs = self.actor(state)
-        action = torch.multinomial(action_probs, num_samples=1).item()
-        return action
+        dist = Categorical(action_probs)
+        action = dist.sample()
+        return action, dist.log_prob(action)
 
     def compute_advantages(self, rewards, values, dones):
         advantages = []
@@ -170,10 +175,10 @@ class PPOAgent:
         memory.clear()
 
     def update_new(self, memory):
-        self.old_actor.load_state_dict(self.actor.state_dict())
+        # self.old_actor.load_state_dict(self.actor.state_dict())
 
         for step in range(self.update_steps):
-            state, action, old_prob, reward, done = memory.sample(64)
+            state, action, old_prob, reward, done, _ = memory.sample(64)
             # print(len(state), state[0].shape)  # (batch_size, action_dim)
             value = self.critic(state).squeeze()
             T = len(state)
@@ -206,6 +211,47 @@ class PPOAgent:
                 ret.insert(0, G)
             ret = torch.tensor(ret, dtype=torch.float32).to(device)
             critic_loss = nn.MSELoss()(value, ret)
+
+            # Backpropagation
+            self.actor_optimizer.zero_grad()
+            actor_loss.backward()
+            self.actor_optimizer.step()
+
+            self.critic_optimizer.zero_grad()
+            critic_loss.backward()
+            self.critic_optimizer.step()
+
+    def update_new_new(self, memory):
+        for step in range(self.update_steps):
+            old_state, action, old_prob, reward, done, new_state = memory.sample(64)
+            # print(len(state), state[0].shape)  # (batch_size, action_dim)
+            old_value = self.critic(old_state).squeeze()
+
+            # 计算下一个价值
+            next_value = self.critic(new_state).squeeze()
+            last_value = (1 - done) * next_value
+
+            # 计算优势和目标价值
+            advantages = reward + self.gamma * last_value - old_value
+            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-5)
+            advantages = advantages.detach()
+
+            # 计算logprobs和熵
+            # print(old_state.shape)  # (batch_size, action_dim)
+            # print(self.critic(old_state).shape)  # (batch_size, 1)
+            dist = Categorical(self.actor(old_state))
+            # print(action.shape)  # (batch_size)
+            logprob = dist.log_prob(action)
+            entropy = dist.entropy().mean()
+
+            # 计算策略损失
+            ratio = torch.exp(logprob - old_prob)
+            surr1 = ratio * advantages
+            surr2 = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon) * advantages
+            actor_loss = -torch.min(surr1, surr2).mean() + 0.01 * entropy
+
+            # 计算价值损失
+            critic_loss = nn.MSELoss()(old_value, advantages)
 
             # Backpropagation
             self.actor_optimizer.zero_grad()

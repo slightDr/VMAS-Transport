@@ -8,7 +8,7 @@ from PPOAgent import *
 NUM_EPISODES = 3000
 NUM_STEPS = 500
 NUM_ENVS = 32
-UPDATE_INTERVAL = 100
+UPDATE_INTERVAL = 250
 
 # # save path
 # current_path = os.path.dirname(os.path.realpath(__file__))
@@ -17,7 +17,7 @@ UPDATE_INTERVAL = 100
 
 
 def ppo_train(
-    num_envs=1, num_agents=3, num_episodes=1000, num_steps=500
+    num_envs=1, num_agents=4, num_episodes=400, num_steps=50000
 ):
     """
     在 vmas 的 transport 场景中训练 PPO。
@@ -30,11 +30,11 @@ def ppo_train(
     """
     # 创建 VMAS transport 场景环境
     env = vmas.make_env(
-        scenario="balance",
+        scenario="transport",
         num_envs=num_envs,
         device=device,
         continuous_actions=False,
-        seed=42
+        # seed=42
     )
     env.reset()
 
@@ -45,8 +45,9 @@ def ppo_train(
     # 创建智能体
     agents = [PPOAgent(state_dim, action_dim) for _ in range(num_agents)]
     memories = [Memory() for _ in range(num_agents)]
+    total_reward = 0
 
-    for episode in tqdm(range(num_episodes)):
+    for episode in range(num_episodes):
         states = env.reset()  # shape: (num_envs, num_agents, state_dim)
         episode_rewards = np.zeros((num_envs, num_agents))
 
@@ -64,11 +65,9 @@ def ppo_train(
                 agent_actions = []
                 agent_probs = []
                 for env_idx in range(num_envs):
-                    action = agent.select_action(agent_states[env_idx])
+                    action, log_prob = agent.select_action(agent_states[env_idx])
                     agent_actions.append(action)
-
-                    probs = agent.get_action_probs(agent_states[env_idx])
-                    agent_probs.append(probs[action].item())
+                    agent_probs.append(log_prob)
 
                 actions.append(agent_actions)
                 action_probs.append(agent_probs)
@@ -89,6 +88,7 @@ def ppo_train(
                         action_probs[agent_id][env_idx],
                         rewards[agent_id][env_idx],
                         dones[env_idx],
+                        next_states[agent_id][env_idx],
                     )
                     episode_rewards[env_idx, agent_id] += rewards[agent_id][env_idx]
 
@@ -101,12 +101,12 @@ def ppo_train(
         # 更新每个智能体的策略
             if (step + 1) % UPDATE_INTERVAL == 0:
                 for agent_id, agent in enumerate(agents):
-                    agent.update(memories[agent_id])
+                    agent.update_new_new(memories[agent_id])
         # for agent_id, agent in enumerate(agents):
-        #     agent.update_new(memories[agent_id])
+        #     agent.update_new_new(memories[agent_id])
 
         # 打印每个环境的总奖励
-        print(f"Episode {episode + 1}, Rewards: {episode_rewards.mean(axis=0)}")
+        print(f"Episode {episode + 1}, Rewards: {sum(episode_rewards.mean(axis=0)) / num_steps}")
 
 
 # def cppo_train(env, state_dim, action_dim, batch_size, num_episode, num_step):
