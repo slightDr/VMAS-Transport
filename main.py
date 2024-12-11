@@ -4,9 +4,8 @@ from algorithms import *
 from PPOAgent import *
 
 
-NUM_EPISODES = 3000
-NUM_STEPS = 500
-NUM_ENVS = 32
+NUM_EPISODES = 400
+NUM_STEPS = 5000
 UPDATE_INTERVAL = 250
 
 
@@ -21,7 +20,7 @@ def main():
     )
     env.reset()
 
-    ippo = IPPO(env)
+    ippo = IPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
     ippo.train()
 
 
