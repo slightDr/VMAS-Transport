@@ -1,5 +1,5 @@
 from PPOAgent import *
-from PPOBasic import PPOBasic
+from .PPOBasic import PPOBasic
 
 
 class CPPO(PPOBasic):
