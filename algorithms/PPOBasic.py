@@ -81,12 +81,12 @@ class PPOBasic:
                 if torch.all(dones):
                     break
 
-                # 更新每个智能体的策略
-                if (step + 1) % self.update_interval == 0:
-                    for agent_id, agent in enumerate(agents):
-                        agent.update_new(memories[agent_id])
-            # for agent_id, agent in enumerate(agents):
-            #     agent.update_new_new(memories[agent_id])
+            # 更新每个智能体的策略
+            #     if (step + 1) % self.update_interval == 0:
+            #         for agent_id, agent in enumerate(agents):
+            #             agent.update_new(memories[agent_id])
+            for agent_id, agent in enumerate(agents):
+                agent.update(memories[agent_id])
 
             # 打印每个环境的总奖励
             print(f"Episode {episode + 1}, Rewards: {sum(episode_rewards.mean(axis=0)) / num_steps}")
