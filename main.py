@@ -12,7 +12,7 @@ UPDATE_INTERVAL = 250
 def main():
     # 创建 VMAS transport 场景环境
     env = vmas.make_env(
-        scenario="transport",
+        scenario="wheel",
         num_envs=1,
         device=device,
         continuous_actions=False,
@@ -20,11 +20,11 @@ def main():
     )
     env.reset()
 
-    # ippo = IPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
-    # ippo.train()
+    ippo = IPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
+    ippo.train()
 
-    cppo = CPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
-    cppo.train()
+    # cppo = CPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
+    # cppo.train()
 
     # mappo = MAPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
     # mappo.train()

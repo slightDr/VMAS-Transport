@@ -158,9 +158,9 @@ class PPOAgent:
 
         for _ in range(self.update_steps):
             # 价值网络
-            next_state_value = self.critic(next_states)  # 下一时刻的state_value  [b,1]
-            td_target = rewards + self.gamma * next_state_value * (1 - dones)  # 目标--当前时刻的state_value  [b,1]
-            td_value = self.critic(states)  # 预测--当前时刻的state_value  [b,1]
+            next_state_value = self.critic(next_states)  # 下一时刻的state_value
+            td_target = rewards + self.gamma * next_state_value * (1 - dones)  # 目标--当前时刻的state_value
+            td_value = self.critic(states)  # 预测--当前时刻的state_value
             td_delta = td_value - td_target  # 时序差分  # [b,1]
 
             # 计算GAE优势函数，当前状态下某动作相对于平均的优势
