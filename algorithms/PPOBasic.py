@@ -17,7 +17,7 @@ class PPOBasic:
     def init_agents(self, n, state_dim, action_dim):
         pass
 
-    def train(self, num_envs=1, num_agents=4, num_episodes=400, num_steps=50000):
+    def train(self, num_episodes=400, num_steps=5000):
 
         self.env.reset()
 
@@ -35,6 +35,8 @@ class PPOBasic:
             episode_rewards = np.zeros((num_envs, num_agents))
 
             for step in range(num_steps):
+                # if step % 1000 == 0:
+                #     print(f"step {step}")
                 actions = []
                 action_probs = []
 

@@ -20,8 +20,14 @@ def main():
     )
     env.reset()
 
-    ippo = IPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
-    ippo.train()
+    # ippo = IPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
+    # ippo.train()
+
+    cppo = CPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
+    cppo.train()
+
+    # mappo = MAPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
+    # mappo.train()
 
 
 if __name__ == '__main__':

@@ -7,6 +7,7 @@
     <list default="true" id="824c2be1-3b61-4c3f-b6d9-e8fd40e9d180" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PPOAgent.py" beforeDir="false" afterPath="$PROJECT_DIR$/PPOAgent.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/algorithms/CPPO.py" beforeDir="false" afterPath="$PROJECT_DIR$/algorithms/CPPO.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/algorithms/PPOBasic.py" beforeDir="false" afterPath="$PROJECT_DIR$/algorithms/PPOBasic.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
@@ -124,7 +125,7 @@
       <workItem from="1733912358631" duration="2313000" />
       <workItem from="1733918906867" duration="33000" />
       <workItem from="1733921259952" duration="6844000" />
-      <workItem from="1734008133685" duration="863000" />
+      <workItem from="1734008133685" duration="3051000" />
     </task>
     <servers />
   </component>
@@ -143,7 +144,7 @@
     </option>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/VMASTransport$main.coverage" NAME="main Coverage Results" MODIFIED="1734008618074" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/VMASTransport$main.coverage" NAME="main Coverage Results" MODIFIED="1734011109075" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/VMASTransport$test.coverage" NAME="test Coverage Results" MODIFIED="1733741332097" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

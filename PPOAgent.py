@@ -151,50 +151,47 @@ class PPOAgent:
     def update(self, memory):
         states = torch.stack(memory.states).to(device)
         actions = torch.tensor(memory.actions).to(device)
-        old_probs = torch.tensor(memory.action_probs).to(device)
+        old_log_probs = torch.tensor(memory.action_probs).to(device)
         rewards = torch.tensor(memory.rewards, dtype=torch.float32).to(device)
         dones = torch.tensor(memory.dones, dtype=torch.float32).to(device)
         next_states = torch.stack(memory.next_states).to(device)
 
-        # Compute discounted rewards and advantages
-        values = self.critic(states).detach().squeeze()
-        # print(values.shape)  # 4096
+        for _ in range(self.update_steps):
+            # 价值网络
+            next_state_value = self.critic(next_states)  # 下一时刻的state_value  [b,1]
+            td_target = rewards + self.gamma * next_state_value * (1 - dones)  # 目标--当前时刻的state_value  [b,1]
+            td_value = self.critic(states)  # 预测--当前时刻的state_value  [b,1]
+            td_delta = td_value - td_target  # 时序差分  # [b,1]
 
-        # 价值网络
-        next_state_value = self.critic(next_states)  # 下一时刻的state_value  [b,1]
-        td_target = rewards + self.gamma * next_state_value * (1 - dones)  # 目标--当前时刻的state_value  [b,1]
-        td_value = self.critic(states)  # 预测--当前时刻的state_value  [b,1]
-        td_delta = td_value - td_target  # 时序差分  # [b,1]
+            # 计算GAE优势函数，当前状态下某动作相对于平均的优势
+            advantage = 0  # 累计一个序列上的优势函数
+            advantage_list = []  # 存放每个时序的优势函数值
+            td_delta = td_delta.cpu().detach().numpy()  # gpu-->numpy
+            for delta in td_delta[::-1]:  # 逆序取出时序差分值
+                advantage = self.gamma * self.lamb * advantage + delta
+                advantage_list.append(advantage)  # 保存每个时刻的优势函数
+            advantage_list.reverse()  # 正序
+            advantage = torch.tensor(np.array(advantage_list), dtype=torch.float).to(device)
 
-        # 计算GAE优势函数，当前状态下某动作相对于平均的优势
-        advantage = 0  # 累计一个序列上的优势函数
-        advantage_list = []  # 存放每个时序的优势函数值
-        td_delta = td_delta.cpu().detach().numpy()  # gpu-->numpy
-        for delta in td_delta[::-1]:  # 逆序取出时序差分值
-            advantage = self.gamma * self.lamb * advantage + delta
-            advantage_list.append(advantage)  # 保存每个时刻的优势函数
-        advantage_list.reverse()  # 正序
-        advantage = torch.tensor(advantage_list, dtype=torch.float).to(device)
+            # 计算当前策略下状态s的行为概率 / 在之前策略下状态s的行为概率
+            # print(self.actor(states).shape, actions.shape)  # torch.Size([500, 9]) torch.Size([500])
+            log_probs = torch.log(self.actor(states).gather(1, actions.long().unsqueeze(-1)))
+            ratio = log_probs / old_log_probs
 
-        # 计算当前策略下状态s的行为概率 / 在之前策略下状态s的行为概率
-        old_log_probs = torch.log(self.actor(states).gather(1, actions))  # [b,1]
-        log_probs = torch.log(self.actor(states).gather(1, actions))
-        ratio = log_probs / old_log_probs
+            # clip截断
+            surr1 = ratio * advantage
+            surr2 = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon) * advantage
 
-        # clip截断
-        surr1 = ratio * advantage
-        surr2 = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon) * advantage
-
-        # 损失计算
-        actor_loss = torch.mean(-torch.min(surr1, surr2))  # clip截断
-        critic_loss = torch.mean(nn.MSELoss()(td_value, td_target))  #
-        # 梯度更新
-        self.actor_optimizer.zero_grad()
-        self.critic_optimizer.zero_grad()
-        actor_loss.backward()
-        critic_loss.backward()
-        self.actor_optimizer.step()
-        self.critic_optimizer.step()
+            # 损失计算
+            actor_loss = torch.mean(-torch.min(surr1, surr2))  # clip截断
+            critic_loss = torch.mean(nn.MSELoss()(td_value, td_target))  #
+            # 梯度更新
+            self.actor_optimizer.zero_grad()
+            self.critic_optimizer.zero_grad()
+            actor_loss.backward()
+            critic_loss.backward()
+            self.actor_optimizer.step()
+            self.critic_optimizer.step()
 
         memory.clear()
 
