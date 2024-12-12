@@ -183,7 +183,7 @@ class PPOAgent:
 
         # clip截断
         surr1 = ratio * advantage
-        surr2 = torch.clamp(ratio, 1 - self.eps, 1 + self.eps) * advantage
+        surr2 = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon) * advantage
 
         # 损失计算
         actor_loss = torch.mean(-torch.min(surr1, surr2))  # clip截断
