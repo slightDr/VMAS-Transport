@@ -4,8 +4,8 @@ from algorithms import *
 from PPOAgent import *
 
 
-NUM_EPISODES = 400
-NUM_STEPS = 50000
+NUM_EPISODES = 200
+NUM_STEPS = 60000
 UPDATE_INTERVAL = 250
 
 
@@ -21,13 +21,13 @@ def main():
     env.reset()
 
     ippo = IPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
-    ippo.train()
+    ippo.train(num_episodes=NUM_EPISODES, num_steps=NUM_STEPS)
 
-    # cppo = CPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
-    # cppo.train()
+    cppo = CPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
+    cppo.train(num_episodes=NUM_EPISODES, num_steps=NUM_STEPS)
 
-    # mappo = MAPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
-    # mappo.train()
+    mappo = MAPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
+    mappo.train(num_episodes=NUM_EPISODES, num_steps=NUM_STEPS)
 
 
 if __name__ == '__main__':
