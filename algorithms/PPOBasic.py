@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from tqdm import tqdm
 
 from PPOAgent import Memory
 
@@ -30,7 +31,7 @@ class PPOBasic:
         # 创建智能体
         agents, memories = self.init_agents(num_agents, state_dim, action_dim)
 
-        for episode in range(num_episodes):
+        for episode in tqdm(range(num_episodes)):
             states = self.env.reset()  # shape: (num_envs, num_agents, state_dim)
             episode_rewards = np.zeros((num_envs, num_agents))
 
@@ -91,4 +92,4 @@ class PPOBasic:
                 agent.update(memories[agent_id])
 
             # 打印每个环境的总奖励
-            print(f"Episode {episode + 1}, Rewards: {sum(episode_rewards.mean(axis=0)) / num_steps}")
+            print(f"Episode {episode + 1}, Rewards: {sum(episode_rewards.mean(axis=0))}")

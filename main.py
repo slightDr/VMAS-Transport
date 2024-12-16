@@ -23,11 +23,11 @@ def main():
     ippo = IPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
     ippo.train(num_episodes=NUM_EPISODES, num_steps=NUM_STEPS)
 
-    cppo = CPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
-    cppo.train(num_episodes=NUM_EPISODES, num_steps=NUM_STEPS)
-
-    mappo = MAPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
-    mappo.train(num_episodes=NUM_EPISODES, num_steps=NUM_STEPS)
+    # cppo = CPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
+    # cppo.train(num_episodes=NUM_EPISODES, num_steps=NUM_STEPS)
+    #
+    # mappo = MAPPO(env, NUM_EPISODES, NUM_STEPS, UPDATE_INTERVAL)
+    # mappo.train(num_episodes=NUM_EPISODES, num_steps=NUM_STEPS)
 
 
 if __name__ == '__main__':
