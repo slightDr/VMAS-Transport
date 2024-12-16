@@ -87,7 +87,7 @@ class PPOBasic:
             # 更新每个智能体的策略
             #     if (step + 1) % self.update_interval == 0:
             #         for agent_id, agent in enumerate(agents):
-            #             agent.update_new(memories[agent_id])
+            #             agent.update(memories[agent_id])
             for agent_id, agent in enumerate(agents):
                 agent.update(memories[agent_id])
 
