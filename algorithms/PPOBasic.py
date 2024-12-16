@@ -92,4 +92,4 @@ class PPOBasic:
                 agent.update(memories[agent_id])
 
             # 打印每个环境的总奖励
-            print(f"Episode {episode + 1}, Rewards: {sum(episode_rewards.mean(axis=0))}")
+            print(f"Episode {episode + 1}, Rewards: {sum(episode_rewards.mean(axis=0)) / num_steps}")
